@@ -2,29 +2,64 @@
 <html>
   <head>
     <title>Socket.IO chat</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
+      body { font: 13px Helvetica, Arial; padding-top: 20px;}
+      /*form { background: #000; padding: 3px; position: fixed; bottom: 0;}
+      form input { border: 0; padding: 10px; margin-right: .5%; }
+      form button { background: rgb(130, 224, 255); border: none; padding: 10px; }*/
+      #messages, #old-messages, #user { list-style-type: none; margin: 0; padding: 0; }
+      #messages, #old-messages li { padding: 5px 10px; }
+      #messages, #old-messages li:nth-child(odd) { background: #eee; }
+      #chat-div {height: 400px; overflow-y: auto;}
+      
     </style>
   </head>
   <body>
-    <ul id="messages"></ul>
-    <form action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
-    </form>
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-8">
+          <div class="well">
+            <div id="chat-div">
+              <ul class="list-group" id="old-messages"></ul>
+              <ul id="messages"></ul>
+              <form action="">
+                <input id="m" class="form-control" autocomplete="off" /><!-- <button class= "btn btn-primary">Send</button> -->
+              </form>
+              <ul id="typing-status"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-4">
+          <div class="well">
+            <h2>Online Users</h2>
+            <div id="user-div">
+              <ul id="user"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      
+      
+
     <script src="http://cdn.socket.io/socket.io-1.4.5.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
-      
+      //var objDiv = document.getElementById("chat-div");
+      //objDiv.scrollTop = objDiv.scrollHeight;
       var socket = io();
       var user = prompt("Please enter your name");
-      if(user!=null){
+      if(user!=null || user!= '' || user!=undefined){
             socket.emit('user',user);
       }
 
@@ -33,9 +68,56 @@
         $('#m').val('');
         return false;
       });
+
+      socket.on('message', function(msg){
+          //$('#typingornot').html(msg);
+          $('#typing-status').text(msg);
+      });
+
       socket.on('chat message', function(msg){
         $('#messages').append($('<li>').text(msg));
+        //$('#messages').append($('<li>').text(msg));
       });
+
+      socket.on('load old Chat', function(msg){
+        $('#old-messages').empty();
+        $('#old-messages').html();
+        for (var indx=0; indx<msg.length; indx++) {
+            var message = msg[indx].userName + ': ' + msg[indx].message;
+            $('#old-messages').append($('<li>').text(message));
+            //socket.emit('chat message', message);
+        };
+        //var myDiv = $("#chat-div");
+        //myDiv.animate({ scrollTop: myDiv.prop("scrollHeight") - myDiv.height() });
+        $("#chat-div").scrollTop($("#chat-div")[0].scrollHeight);
+      });
+
+      socket.on('online users', function(userData){
+            $('#user').empty();
+            $('#user').html();
+        userData.forEach(function(item) {
+            $('#user').append($('<li>').text(item));
+        });
+        
+      });
+
+      
+      
+      var timeout;
+      var typing = false;
+      function timeoutFunction(){
+         typing = false;
+         socket.emit('typing', false);
+      }
+      $('#m').keyup(function(){
+        typing = true;
+        socket.emit('typing', user + 'is typing..');
+        clearTimeout(timeout);
+        timeout = setTimeout(timeoutFunction, 1000);
+      });
+      
+      //$("#chat-div").scrollTop($("#chat-div")[0].scrollHeight);
+      
 
     </script>
   </body>
