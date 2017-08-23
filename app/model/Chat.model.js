@@ -5,7 +5,8 @@ var chatSchema = new Schema({
 	userName 			: {type:String,default:'',required:true},
 	group    			: {type:String,default:''},
 	message  			: {type:String,default:''},
-	createdOn           : {type:Date}
+	createdOn           : {type:Date},
+	read                : {type:Boolean}
 
 });
 

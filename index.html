@@ -20,15 +20,18 @@
       #messages, #old-messages li { padding: 5px 10px; }
       #messages, #old-messages li:nth-child(odd) { background: #eee; }
       #chat-div {height: 400px; overflow-y: auto;}
-      
+      #m {top: 70%;}
     </style>
   </head>
   <body>
     <div class="container">
       <div class="row">
+        <div class="col-xs-12"><p id="user-data">Group</p></div>
         <div class="col-xs-8">
           <div class="well">
+
             <div id="chat-div">
+
               <ul class="list-group" id="old-messages"></ul>
               <ul id="messages"></ul>
               <form action="">
@@ -40,6 +43,7 @@
         </div>
         <div class="col-xs-4">
           <div class="well">
+            <p><button class="btn btn-primary" id="main-group">Main Chat</button></p>
             <h2>Online Users</h2>
             <div id="user-div">
               <ul id="user"></ul>
@@ -59,6 +63,9 @@
       //objDiv.scrollTop = objDiv.scrollHeight;
       var socket = io();
       var user = prompt("Please enter your name");
+      while(!user){
+         user = prompt("Please enter your name");
+      }
       if(user!=null || user!= '' || user!=undefined){
             socket.emit('user',user);
       }
@@ -75,16 +82,21 @@
       });
 
       socket.on('chat message', function(msg){
-        $('#messages').append($('<li>').text(msg));
+        $('#messages').append($('<li class="list-group-item list-group-item-info">').text(msg));
         //$('#messages').append($('<li>').text(msg));
+        
       });
 
+      socket.on('privateRoom', function(data){
+        console.log(JSON.stringify(data));
+      });
+    
       socket.on('load old Chat', function(msg){
-        $('#old-messages').empty();
-        $('#old-messages').html();
+        $('#messages').html();
+        $('#messages').empty();
         for (var indx=0; indx<msg.length; indx++) {
             var message = msg[indx].userName + ': ' + msg[indx].message;
-            $('#old-messages').append($('<li>').text(message));
+            $('#messages').append($('<li class="list-group-item list-group-item-info">').text(message));
             //socket.emit('chat message', message);
         };
         //var myDiv = $("#chat-div");
@@ -96,13 +108,20 @@
             $('#user').empty();
             $('#user').html();
         userData.forEach(function(item) {
-            $('#user').append($('<li>').text(item));
+            if(item != user){
+               $('#user').append($('<li class="list-group-item list-group-item-warning" onclick="privateChat(\''+item+'\')">').text(item));
+            }
+            
         });
         
       });
 
       
-      
+      var privateChat = function(item){
+           $("#user-data").text(item);
+           socket.emit('privateChat', item, user);
+      }
+
       var timeout;
       var typing = false;
       function timeoutFunction(){
@@ -116,6 +135,10 @@
         timeout = setTimeout(timeoutFunction, 1000);
       });
       
+      $("#main-group").on('click', function(){
+         $("#user-data").text('Group');
+         socket.emit('privateChat');
+      });
       //$("#chat-div").scrollTop($("#chat-div")[0].scrollHeight);
       
 
